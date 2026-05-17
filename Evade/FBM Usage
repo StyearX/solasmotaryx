@@ -1,0 +1,65 @@
+
+
+local function MakeDraggable(topbar, obj, locked)
+    local dragging, dragInput, dragStart, startPos = false, nil, nil, nil
+    local holding, holdTime, moveCancelThreshold   = false, 1.0, 6
+    local holdToken = 0
+
+    obj:SetAttribute("Locked", locked or false)
+
+    local function Update(input)
+        if obj:GetAttribute("Locked") then return end
+        local delta = input.Position - dragStart
+        obj.Position = UDim2.new(
+            startPos.X.Scale, startPos.X.Offset + delta.X,
+            startPos.Y.Scale, startPos.Y.Offset + delta.Y
+        )
+    end
+
+    local function ToggleLock()
+        local newState = not obj:GetAttribute("Locked")
+        obj:SetAttribute("Locked", newState)
+        Fluent:Notify({
+            Title    = newState and "Button Locked" or "Button Unlocked",
+            Content  = newState and "This button is now locked in place." or "This button can now be moved.",
+            Duration = 2,
+        })
+    end
+
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType ~= Enum.UserInputType.MouseButton1
+        and input.UserInputType ~= Enum.UserInputType.Touch then return end
+        dragging  = not obj:GetAttribute("Locked")
+        holding   = true
+        dragStart = input.Position
+        startPos  = obj.Position
+        holdToken += 1
+        local token = holdToken
+        task.delay(holdTime, function()
+            if holding and token == holdToken then ToggleLock() end
+        end)
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                holding  = false
+            end
+        end)
+    end)
+
+    topbar.InputChanged:Connect(function(input)
+        if not dragStart then return end
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            if (input.Position - dragStart).Magnitude > moveCancelThreshold then
+                holding = false
+            end
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then Update(input) end
+    end)
+end
+
+MakeDraggable(mainBtn, mainBtn, false)
