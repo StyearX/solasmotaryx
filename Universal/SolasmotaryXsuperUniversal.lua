@@ -1,5 +1,5 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/StyearX/Fluent-Modded/releases/download/Fluent/FluentPro"))()
-if not Fluent then warn("[OnetapRecoded] FluentPro failed to load") return end
+if not Fluent then warn("[sol] FluentPro failed to load") return end
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
